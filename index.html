@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erkro CRM Inmobiliario | Gestión Comercial & Métricas de Crecimiento</title>
+  
+  <!-- Meta tags SEO / PWA -->
+  <meta name="description" content="CRM completo para inmobiliarias: seguimiento de oportunidades, catálogo de inmuebles, clientes, agenda de visitas y comparativa de ventas YoY.">
+  <meta name="theme-color" content="#1e3a8a">
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN con soporte de Modo Oscuro class -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Canvas Confetti CDN para celebraciones de cierres ganados -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Estilos Personalizados del CRM -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col md:flex-row overflow-x-hidden">
+
+  <!-- ==================== SIDEBAR PRINCIPAL ==================== -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 flex flex-col justify-between shadow-lg lg:shadow-none">
+    <div>
+      <!-- LOGO / BRANDING -->
+      <div class="h-16 px-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+        <a href="#dashboard" class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-base font-extrabold tracking-tight text-slate-900 dark:text-white leading-none block">
+              Erkro <span class="text-blue-600 dark:text-blue-400">CRM</span>
+            </span>
+            <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mt-0.5">
+              Inmobiliaria
+            </span>
+          </div>
+        </a>
+
+        <!-- Botón cerrar en móvil -->
+        <button id="btn-toggle-sidebar" class="lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- MENÚ DE NAVEGACIÓN -->
+      <nav class="p-4 space-y-1">
+        <a href="#dashboard" data-route="dashboard" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>Dashboard & Crecimiento</span>
+        </a>
+
+        <a href="#pipeline" data-route="pipeline" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="kanban" class="w-4 h-4"></i>
+          <span>Embudo de Oportunidades</span>
+        </a>
+
+        <a href="#properties" data-route="properties" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="home" class="w-4 h-4"></i>
+          <span>Inventario de Inmuebles</span>
+        </a>
+
+        <a href="#contacts" data-route="contacts" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Clientes & Contactos</span>
+        </a>
+
+        <a href="#visits" data-route="visits" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+          <span>Agenda de Visitas</span>
+        </a>
+
+        <a href="#reports" data-route="reports" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="trending-up" class="w-4 h-4"></i>
+          <span>Reporte de Ventas YoY</span>
+        </a>
+
+        <a href="#tools" data-route="tools" class="nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all">
+          <i data-lucide="wrench" class="w-4 h-4"></i>
+          <span>Herramientas & Crédito</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- PIE DEL SIDEBAR: RESPALDO, MODO OSCURO & ASESOR ACTIVO -->
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+      <!-- Botón Copia de Seguridad & Migración -->
+      <button id="btn-open-backup" class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">
+        <span class="flex items-center gap-2">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-blue-600"></i> Respaldo / Hostinger
+        </span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400"></i>
+      </button>
+
+      <!-- Asesor Activo: Rodrigo Hernández -->
+      <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center gap-2.5">
+          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=80" alt="Rodrigo Hernández" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700">
+          <div>
+            <div id="sidebar-user-name" class="text-xs font-bold text-slate-900 dark:text-white leading-tight">Rodrigo Hernández</div>
+            <div id="sidebar-user-role" class="text-[10px] text-slate-400 font-medium">Director Inmobiliario</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <!-- Botón Crear Usuario -->
+          <button onclick="window.ErkroApp.openUserModal()" class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100" title="Crear Nuevo Usuario">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+          </button>
+
+          <!-- Toggle Modo Oscuro -->
+          <button id="btn-toggle-theme" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors" title="Cambiar Tema">
+            <i data-lucide="moon" class="w-3.5 h-3.5 dark:hidden"></i>
+            <i data-lucide="sun" class="w-3.5 h-3.5 hidden dark:block text-amber-400"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== CONTENEDOR PRINCIPAL ==================== -->
+  <div class="flex-1 flex flex-col min-h-screen lg:pl-64">
+    <!-- TOPBAR -->
+    <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-4 sm:px-8 flex items-center justify-between no-print">
+      <div class="flex items-center gap-3">
+        <!-- Botón menú móvil -->
+        <button id="btn-toggle-sidebar" class="lg:hidden text-slate-600 dark:text-slate-300 p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-2 text-xs">
+          <span class="font-bold text-slate-400">Inmobiliaria Erkro</span>
+          <span class="text-slate-300">/</span>
+          <span class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Comercial Activo
+          </span>
+        </div>
+      </div>
+
+      <!-- ACCIONES RÁPIDAS TOPBAR -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button onclick="window.ErkroApp ? window.ErkroApp.goToProperties(true) : (window.location.hash='properties')" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold transition-colors cursor-pointer" title="Registrar nuevo inmueble">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Inmueble
+        </button>
+
+        <button onclick="window.ErkroApp ? window.ErkroApp.goToPipeline(true) : (window.location.hash='pipeline')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer" title="Crear nueva oportunidad">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Oportunidad
+        </button>
+      </div>
+    </header>
+
+    <!-- ÁREA DE CONTENIDO DINÁMICO -->
+    <main id="content-area" class="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto">
+      <!-- El componente activo se renderiza aquí dinámicamente -->
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="py-4 px-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400 no-print">
+      Erkro CRM Inmobiliario • Diseñado para Alta Conversión & Análisis de Crecimiento Comercial YoY • Compatible con GitHub Pages & Hostinger
+    </footer>
+  </div>
+
+  <!-- CONTENEDOR PARA MODALES GLOBALES -->
+  <div id="global-modal-container"></div>
+
+  <!-- SCRIPT PRINCIPAL DEL CRM INMOBILIARIO (UNIVERSAL) -->
+  <script src="js/crm-app.js"></script>
+</body>
+</html>
