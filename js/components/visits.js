@@ -75,6 +75,9 @@ export function renderVisits(containerId = 'content-area') {
               <div>
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold px-2.5 py-1 rounded-full border ${v.modality === 'Virtual' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300' : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300'}">
+                      ${v.modality === 'Virtual' ? '💻 Virtual' : '🏢 Presencial'}
+                    </span>
                     <span class="text-xs font-bold px-2.5 py-1 rounded-full border ${statusBadge}">
                       ${v.status}
                     </span>
@@ -112,6 +115,19 @@ export function renderVisits(containerId = 'content-area') {
                   </div>
                 </div>
 
+                <!-- Ubicación o Enlace Virtual -->
+                <div class="text-xs mb-3">
+                  ${v.modality === 'Virtual' ? `
+                    <span class="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1.5">
+                      <i data-lucide="video" class="w-3.5 h-3.5"></i> ${v.location ? escapeHTML(v.location) : 'Videollamada'}
+                    </span>
+                  ` : `
+                    <span class="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                      <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-600"></i> ${v.location || (prop ? prop.address : 'En el inmueble')}
+                    </span>
+                  `}
+                </div>
+
                 <!-- Feedback Post-Visita si existe -->
                 ${v.feedback ? `
                   <div class="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-800/40 text-xs">
@@ -130,7 +146,7 @@ export function renderVisits(containerId = 'content-area') {
                 </button>
 
                 ${cnt && cnt.whatsapp && v.status === 'Programada' ? `
-                  <a href="https://wa.me/${cnt.whatsapp}?text=Hola%20${encodeURIComponent(cnt.name)},%20te%20contacto%20de%20Inmobiliaria%20Erkro%20para%20confirmar%20nuestra%20visita%20del%20${v.date}%20a%20las%20${v.time}." target="_blank" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5">
+                  <a href="https://wa.me/${cnt.whatsapp}?text=Hola%20${encodeURIComponent(cnt.name)},%20te%20contacto%20de%20Inmobiliaria%20Erkro%20para%20confirmar%20nuestra%20visita%20${v.modality === 'Virtual' ? 'virtual' : 'presencial'}%20del%20${v.date}%20a%20las%20${v.time}." target="_blank" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5">
                     <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Confirmar WhatsApp
                   </a>
                 ` : ''}

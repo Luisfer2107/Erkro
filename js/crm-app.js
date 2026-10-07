@@ -417,8 +417,11 @@
         agentId: "ag_rodrigo",
         date: "2026-10-10",
         time: "10:30",
+        duration: "45 min",
+        modality: "Presencial",
+        location: "Carrera 32 # 2 Sur - 45, El Poblado (Portería Principal)",
         status: "Programada",
-        notes: "Llevar catálogo impreso y verificar parqueaderos.",
+        notes: "Llevar catálogo impreso y verificar disponibilidad de parqueaderos.",
         feedback: ""
       },
       {
@@ -428,6 +431,9 @@
         agentId: "ag_rodrigo",
         date: "2026-09-28",
         time: "15:00",
+        duration: "1 hora",
+        modality: "Presencial",
+        location: "Km 4 Vía Don Diego - Rionegro",
         status: "Realizada",
         notes: "Visita familiar con cónyuge.",
         feedback: "Les encantó la piscina y el diseño. Pidieron margen de descuento para ofertar."
@@ -437,11 +443,14 @@
         propertyId: "prop_3",
         contactId: "cnt_3",
         agentId: "ag_rodrigo",
-        date: "2026-09-10",
-        time: "11:00",
-        status: "Realizada",
-        notes: "Inspección técnica de terraza.",
-        feedback: "Aprobada por el perito. Procedieron a elaboración de promesa de venta."
+        date: "2026-10-14",
+        time: "16:00",
+        duration: "45 min",
+        modality: "Virtual",
+        location: "https://meet.google.com/erk-vis-360",
+        status: "Programada",
+        notes: "Recorrido virtual 360° en vivo con inversionista radicado en Bogotá.",
+        feedback: ""
       }
     ]
   };
@@ -466,6 +475,13 @@
           if (!this.state.agents || !this.state.agents.length) {
             this.state.agents = INITIAL_DATA.agents;
             this.save();
+          }
+          if (this.state.visits && this.state.visits.length) {
+            let updated = false;
+            this.state.visits.forEach(v => {
+              if (!v.modality) { v.modality = 'Presencial'; updated = true; }
+            });
+            if (updated) this.save();
           }
         } else {
           this.state = JSON.parse(JSON.stringify(INITIAL_DATA));
@@ -505,6 +521,7 @@
     getDeals() { return this.state.deals || []; }
     getDeal(id) { return this.getDeals().find(d => d.id === id) || null; }
     getVisits() { return this.state.visits || []; }
+    getVisit(id) { return this.getVisits().find(v => v.id === id) || null; }
 
     // Guardar / Crear nuevo usuario o asesor
     saveAgent(agent) {
@@ -1034,22 +1051,60 @@
             ${visits.map(v => {
               const prop = properties.find(p => p.id === v.propertyId);
               const cnt = contacts.find(c => c.id === v.contactId);
+              const ag = store.getAgent(v.agentId);
+              const isVirtual = v.modality === 'Virtual';
+
+              const waMsg = encodeURIComponent(
+                `🏡 *Confirmación de Cita Inmobiliaria - Inmobiliaria Erkro*\n\n` +
+                `Hola ${cnt ? cnt.name : 'Estimado cliente'}, te saluda ${ag ? ag.name : 'tu asesor'} de Inmobiliaria Erkro.\n` +
+                `Te confirmo los detalles de nuestra cita agendada:\n` +
+                `• *Inmueble:* ${prop ? `${prop.title} (${prop.code})` : 'Inmueble Erkro'}\n` +
+                `• *Modalidad:* ${isVirtual ? '💻 Visita Virtual (Videollamada / Tour 360°)' : '🏢 Visita Presencial'}\n` +
+                `• *Fecha:* ${v.date}\n` +
+                `• *Hora:* ${v.time || '10:30'}\n` +
+                `• *${isVirtual ? 'Enlace' : 'Lugar'}:* ${v.location || (prop ? prop.address : 'Coordinar con asesor')}\n` +
+                `• *Asesor:* ${ag ? ag.name : 'Rodrigo Hernández'}\n\n` +
+                `¿Nos confirmas tu asistencia? ¡Quedamos atentos!`
+              );
+
               return `
                 <div class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 flex flex-col justify-between">
                   <div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md">
-                        ${v.date} • ${v.time}
+                      <span class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3 h-3"></i> ${v.date} • ${v.time || '10:30'}
                       </span>
-                      <span class="text-[11px] text-slate-400">${prop ? prop.code : ''}</span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        isVirtual 
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950 dark:text-purple-300' 
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300'
+                      }">
+                        ${isVirtual ? '💻 Virtual' : '🏢 Presencial'}
+                      </span>
                     </div>
-                    <h4 class="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">${prop ? Formatters.escapeHTML(prop.title) : 'Propiedad'}</h4>
-                    <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                      <i data-lucide="user" class="w-3 h-3"></i> ${cnt ? Formatters.escapeHTML(cnt.name) : 'Cliente'}
-                    </p>
+
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
+                      ${prop ? `[${prop.code}] ${Formatters.escapeHTML(prop.title)}` : 'Inmueble'}
+                    </h4>
+
+                    <div class="mt-2 space-y-1 text-xs text-slate-500">
+                      <p class="flex items-center gap-1.5 truncate">
+                        <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span>Cliente: <strong class="text-slate-800 dark:text-slate-200">${cnt ? Formatters.escapeHTML(cnt.name) : 'N/A'}</strong></span>
+                      </p>
+                      <p class="flex items-center gap-1.5 truncate">
+                        <i data-lucide="briefcase" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span>Asesor: <strong class="text-slate-700 dark:text-slate-300">${ag ? Formatters.escapeHTML(ag.name) : 'Rodrigo Hernández'}</strong></span>
+                      </p>
+                      <p class="flex items-center gap-1.5 truncate text-[11px] text-slate-400">
+                        <i data-lucide="${isVirtual ? 'link' : 'map-pin'}" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span class="truncate">${v.location || (prop ? prop.neighborhood : 'Por coordinar')}</span>
+                      </p>
+                    </div>
                   </div>
+
                   ${cnt && cnt.whatsapp ? `
-                    <a href="https://wa.me/${cnt.whatsapp}?text=Hola%20${encodeURIComponent(cnt.name)},%20te%20contacto%20de%20Inmobiliaria%20Erkro%20para%20confirmar%20nuestra%20visita%20del%20${v.date}" target="_blank" class="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
+                    <a href="https://wa.me/${cnt.whatsapp}?text=${waMsg}" target="_blank" class="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">
                       <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Confirmar WhatsApp
                     </a>
                   ` : ''}
@@ -1853,8 +1908,10 @@
   }
 
   // ==================================================================
-  // 9. COMPONENTE: VISITAS
+  // 9. COMPONENTE: AGENDA DE VISITAS INMOBILIARIAS (PRESENCIAL / VIRTUAL)
   // ==================================================================
+  let visitsFilter = { status: 'all', modality: 'all', search: '' };
+
   function renderVisits(containerId = 'content-area') {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -1862,41 +1919,249 @@
     const visits = store.getVisits();
     const props = store.getProperties();
     const contacts = store.getContacts();
+    const agents = store.getAgents();
+    const settings = store.getSettings();
+
+    // Filtrar visitas
+    const filteredVisits = visits.filter(v => {
+      const vModality = v.modality || 'Presencial';
+      const matchStatus = visitsFilter.status === 'all' || v.status === visitsFilter.status;
+      const matchModality = visitsFilter.modality === 'all' || vModality === visitsFilter.modality;
+      
+      let matchSearch = true;
+      if (visitsFilter.search) {
+        const q = visitsFilter.search.toLowerCase();
+        const p = props.find(pr => pr.id === v.propertyId);
+        const c = contacts.find(cn => cn.id === v.contactId);
+        const a = agents.find(ag => ag.id === v.agentId);
+        const pText = p ? `${p.code} ${p.title} ${p.neighborhood}`.toLowerCase() : '';
+        const cText = c ? `${c.name} ${c.phone}`.toLowerCase() : '';
+        const aText = a ? `${a.name}`.toLowerCase() : '';
+        matchSearch = pText.includes(q) || cText.includes(q) || aText.includes(q) || (v.notes && v.notes.toLowerCase().includes(q)) || (v.location && v.location.toLowerCase().includes(q));
+      }
+      return matchStatus && matchModality && matchSearch;
+    }).sort((a, b) => new Date(`${b.date}T${b.time || '00:00'}`) - new Date(`${a.date}T${a.time || '00:00'}`));
+
+    const pendingCount = visits.filter(v => v.status === 'Programada' || v.status === 'Confirmada').length;
 
     container.innerHTML = `
       <div class="space-y-6">
+        <!-- HEADER PRINCIPAL -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
           <div>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Agenda de Visitas</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Control de citas con clientes e inspección técnica</p>
+            <div class="flex items-center gap-2">
+              <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Agenda de Visitas Inmobiliarias</h1>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                ${pendingCount} pendientes
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Control de citas con clientes, verificación de inmuebles, asesor asignado y modalidad (Virtual o Presencial)</p>
           </div>
-          <button id="btn-add-visit" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5">
-            <i data-lucide="calendar-plus" class="w-4 h-4"></i> Agendar Visita
-          </button>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="btn-add-visit" class="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 transition-colors cursor-pointer">
+              <i data-lucide="calendar-plus" class="w-4 h-4"></i> Agendar Nueva Visita
+            </button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${visits.map(v => {
+        <!-- BARRA DE FILTROS Y BÚSQUEDA -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm text-xs">
+          <!-- Búsqueda rápida -->
+          <div class="relative flex-1 max-w-sm">
+            <input type="text" id="vis-search" placeholder="Buscar por inmueble, cliente o asesor..." value="${Formatters.escapeHTML(visitsFilter.search)}" class="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+            <span class="absolute left-2.5 top-2 text-slate-400">🔍</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Filtro Modalidad: Todas / Presencial / Virtual -->
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <button class="btn-filter-mod px-2.5 py-1 rounded-lg font-semibold cursor-pointer ${visitsFilter.modality === 'all' ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs' : 'text-slate-500'}" data-mod="all">Todas</button>
+              <button class="btn-filter-mod px-2.5 py-1 rounded-lg font-semibold cursor-pointer ${visitsFilter.modality === 'Presencial' ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-xs' : 'text-slate-500'}" data-mod="Presencial">🏢 Presenciales</button>
+              <button class="btn-filter-mod px-2.5 py-1 rounded-lg font-semibold cursor-pointer ${visitsFilter.modality === 'Virtual' ? 'bg-white dark:bg-slate-800 text-purple-600 shadow-xs' : 'text-slate-500'}" data-mod="Virtual">💻 Virtuales</button>
+            </div>
+
+            <!-- Filtro Estado -->
+            <select id="vis-status-filter" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-medium cursor-pointer">
+              <option value="all" ${visitsFilter.status === 'all' ? 'selected' : ''}>Todos los estados</option>
+              <option value="Programada" ${visitsFilter.status === 'Programada' ? 'selected' : ''}>Programada</option>
+              <option value="Confirmada" ${visitsFilter.status === 'Confirmada' ? 'selected' : ''}>Confirmada</option>
+              <option value="Realizada" ${visitsFilter.status === 'Realizada' ? 'selected' : ''}>Realizada</option>
+              <option value="Cancelada" ${visitsFilter.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CUADRÍCULA DE TARJETAS DE VISITAS DETALLADAS -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          ${filteredVisits.length === 0 ? `
+            <div class="col-span-full py-16 text-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-400">
+              <i data-lucide="calendar" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
+              <p class="text-sm font-bold text-slate-700 dark:text-slate-300">No hay visitas agendadas con los filtros seleccionados.</p>
+              <p class="text-xs text-slate-400 mt-1">Haz clic en "Agendar Nueva Visita" para programar una cita con un cliente.</p>
+            </div>
+          ` : filteredVisits.map(v => {
             const p = props.find(pr => pr.id === v.propertyId);
             const c = contacts.find(cn => cn.id === v.contactId);
+            const a = agents.find(ag => ag.id === v.agentId) || agents[0];
+            const isVirtual = (v.modality || 'Presencial') === 'Virtual';
+
+            const statusColors = {
+              'Programada': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
+              'Confirmada': 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800',
+              'Realizada': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+              'Cancelada': 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+            }[v.status] || 'bg-slate-100 text-slate-700 border-slate-200';
+
+            // Mensaje completo para WhatsApp
+            const waMsg = encodeURIComponent(
+              `🏡 *Confirmación de Cita Inmobiliaria - Inmobiliaria Erkro*\n\n` +
+              `Hola ${c ? c.name : 'Estimado cliente'}, te saluda ${a ? a.name : 'tu asesor'} de Inmobiliaria Erkro.\n\n` +
+              `Te confirmo los detalles de nuestra cita agendada:\n` +
+              `• *Inmueble:* ${p ? `${p.title} (${p.code})` : 'Inmueble Erkro'}\n` +
+              `• *Modalidad:* ${isVirtual ? '💻 Visita Virtual (Videollamada / Tour 360°)' : '🏢 Visita Presencial'}\n` +
+              `• *Fecha:* ${v.date}\n` +
+              `• *Hora:* ${v.time || '10:30'} ${v.duration ? `(${v.duration})` : ''}\n` +
+              `• *${isVirtual ? 'Enlace de Reunión' : 'Punto de Encuentro'}:* ${v.location || (p ? p.address : 'Coordinar con asesor')}\n` +
+              `• *Asesor Comercial:* ${a ? a.name : 'Rodrigo Hernández'}\n\n` +
+              `¿Nos confirmas tu asistencia? ¡Quedamos atentos!`
+            );
+
             return `
-              <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">${v.date} • ${v.time}</span>
-                    <span class="text-xs font-semibold text-slate-400">${v.status}</span>
+              <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover-lift flex flex-col justify-between transition-all">
+                <div class="space-y-3.5">
+                  <!-- FILA 1: MODALIDAD, ESTADO & GESTIÓN -->
+                  <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-700/60">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <!-- Badge Modalidad: Virtual vs Presencial -->
+                      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                        isVirtual 
+                          ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800' 
+                          : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+                      }">
+                        ${isVirtual ? '💻 Visita Virtual (Online)' : '🏢 Visita Presencial'}
+                      </span>
+
+                      <!-- Badge Estado -->
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${statusColors}">
+                        ${v.status || 'Programada'}
+                      </span>
+                    </div>
+
+                    <!-- Botón Editar Visita -->
+                    <button class="btn-edit-vis p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" data-vis-id="${v.id}" title="Editar cita o registrar bitácora">
+                      <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </button>
                   </div>
-                  <h4 class="text-sm font-bold text-slate-900 dark:text-white">${p ? Formatters.escapeHTML(p.title) : 'Inmueble'}</h4>
-                  <p class="text-xs text-slate-500 mt-1">Cliente: <strong>${c ? Formatters.escapeHTML(c.name) : 'N/A'}</strong></p>
-                  ${v.feedback ? `<p class="text-xs text-emerald-600 dark:text-emerald-400 italic mt-2">"${Formatters.escapeHTML(v.feedback)}"</p>` : ''}
+
+                  <!-- FILA 2: FECHA Y HORA DESTACADA -->
+                  <div class="flex items-center gap-4 text-xs font-bold text-slate-800 dark:text-slate-100">
+                    <span class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                      <i data-lucide="calendar" class="w-4 h-4"></i> ${v.date}
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i> ${v.time || '10:00'} ${v.duration ? `<span class="text-slate-400 font-normal">(${v.duration})</span>` : ''}
+                    </span>
+                  </div>
+
+                  <!-- FILA 3: FICHA DEL INMUEBLE -->
+                  <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-3">
+                    <img src="${p && p.images && p.images[0] ? p.images[0] : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200'}" alt="Inmueble" class="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-700">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                        <span>🏡 ${p ? p.code : 'INMUEBLE'}</span>
+                        <span class="text-slate-400">•</span>
+                        <span class="text-slate-500">${p ? p.type : ''}</span>
+                      </div>
+                      <h4 class="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        ${p ? Formatters.escapeHTML(p.title) : 'Inmueble no asignado'}
+                      </h4>
+                      <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold truncate">
+                        ${p ? `${p.neighborhood || p.city} • ${Formatters.formatCurrency(p.price, settings.currency)}` : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- FILA 4: CLIENTE Y ASESOR EN CUADRICULA -->
+                  <div class="grid grid-cols-2 gap-3 text-xs">
+                    <!-- Cliente -->
+                    <div class="p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                      <div class="text-[10px] font-bold text-slate-400 uppercase">Cliente / Prospecto</div>
+                      <div class="font-bold text-slate-900 dark:text-white truncate mt-0.5">${c ? Formatters.escapeHTML(c.name) : 'Sin cliente'}</div>
+                      <div class="text-[11px] text-slate-400 truncate">${c && c.phone ? c.phone : 'Sin teléfono'}</div>
+                    </div>
+
+                    <!-- Asesor Comercial -->
+                    <div class="p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                      <div class="text-[10px] font-bold text-slate-400 uppercase">Asesor Asignado</div>
+                      <div class="flex items-center gap-1.5 mt-0.5 truncate">
+                        <img src="${a && a.avatar ? a.avatar : 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100'}" class="w-4 h-4 rounded-full object-cover">
+                        <span class="font-bold text-slate-900 dark:text-white truncate">${a ? Formatters.escapeHTML(a.name) : 'Rodrigo Hernández'}</span>
+                      </div>
+                      <div class="text-[11px] text-slate-400 truncate">${a ? a.role : 'Director Inmobiliario'}</div>
+                    </div>
+                  </div>
+
+                  <!-- FILA 5: UBICACIÓN O ENLACE VIRTUAL -->
+                  <div class="text-xs">
+                    ${isVirtual ? `
+                      <div class="p-2.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/60 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 truncate text-purple-700 dark:text-purple-300">
+                          <i data-lucide="video" class="w-4 h-4 flex-shrink-0"></i>
+                          <span class="truncate font-semibold">${v.location ? Formatters.escapeHTML(v.location) : 'Videollamada por coordinar'}</span>
+                        </div>
+                        ${v.location && v.location.startsWith('http') ? `
+                          <a href="${v.location}" target="_blank" class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] flex-shrink-0">
+                            Abrir Link
+                          </a>
+                        ` : ''}
+                      </div>
+                    ` : `
+                      <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700 flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-blue-600 flex-shrink-0"></i>
+                        <span class="truncate font-medium">${v.location || (p ? p.address : 'Punto de encuentro en el inmueble')}</span>
+                      </div>
+                    `}
+                  </div>
+
+                  <!-- FILA 6: NOTAS / REQUERIMIENTOS PREVIOS -->
+                  ${v.notes ? `
+                    <div class="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                      <i data-lucide="info" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                      <span><strong>Requerimientos:</strong> ${Formatters.escapeHTML(v.notes)}</span>
+                    </div>
+                  ` : ''}
+
+                  <!-- FILA 7: FEEDBACK POST-VISITA (SI EXISTE) -->
+                  ${v.feedback ? `
+                    <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 italic flex items-start gap-2">
+                      <i data-lucide="message-square" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                      <span><strong>Resultado de la visita:</strong> "${Formatters.escapeHTML(v.feedback)}"</span>
+                    </div>
+                  ` : ''}
                 </div>
-                ${c && c.whatsapp ? `
-                  <div class="pt-3 border-t border-slate-100 dark:border-slate-700 mt-3">
-                    <a href="https://wa.me/${c.whatsapp}?text=Hola%20${encodeURIComponent(c.name)},%20te%20contacto%20de%20Inmobiliaria%20Erkro%20para%20confirmar%20la%20visita." target="_blank" class="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                      <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Confirmar WhatsApp
+
+                <!-- ACCIONES INFERIORES: WHATSAPP, MARCAR REALIZADA & EDITAR -->
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2 mt-4 text-xs">
+                  ${c && c.whatsapp ? `
+                    <a href="https://wa.me/${c.whatsapp}?text=${waMsg}" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 shadow-xs transition-colors">
+                      <i data-lucide="message-circle" class="w-4 h-4"></i> Confirmar WhatsApp
                     </a>
+                  ` : `
+                    <span class="text-slate-400 text-[11px]">Sin WhatsApp</span>
+                  `}
+
+                  <div class="flex items-center gap-2">
+                    ${v.status !== 'Realizada' ? `
+                      <button class="btn-mark-done px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold transition-colors cursor-pointer" data-vis-id="${v.id}">
+                        ✓ Realizada
+                      </button>
+                    ` : ''}
+                    <button class="btn-edit-vis px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-600 dark:text-blue-400 font-bold transition-colors cursor-pointer" data-vis-id="${v.id}">
+                      Gestionar
+                    </button>
                   </div>
-                ` : ''}
+                </div>
               </div>
             `;
           }).join('')}
@@ -1907,28 +2172,322 @@
 
     if (window.lucide) window.lucide.createIcons();
 
-    const addBtn = document.getElementById('btn-add-visit');
-    if (addBtn) {
-      addBtn.addEventListener('click', () => {
-        const pList = store.getProperties();
-        const cList = store.getContacts();
-        const aList = store.getAgents();
-        if (!pList.length || !cList.length) {
-          alert('Debes tener al menos un inmueble y un contacto registrados.');
-          return;
-        }
-        store.saveVisit({
-          id: Formatters.generateId('vis'),
-          propertyId: pList[0].id,
-          contactId: cList[0].id,
-          agentId: aList[0].id,
-          date: new Date().toISOString().split('T')[0],
-          time: '11:00',
-          status: 'Programada'
-        });
+    // Eventos de Filtro y Búsqueda
+    const searchInp = document.getElementById('vis-search');
+    if (searchInp) {
+      searchInp.addEventListener('input', (e) => {
+        visitsFilter.search = e.target.value;
         renderVisits(containerId);
       });
     }
+
+    const statusSel = document.getElementById('vis-status-filter');
+    if (statusSel) {
+      statusSel.addEventListener('change', (e) => {
+        visitsFilter.status = e.target.value;
+        renderVisits(containerId);
+      });
+    }
+
+    document.querySelectorAll('.btn-filter-mod').forEach(b => {
+      b.addEventListener('click', () => {
+        visitsFilter.modality = b.getAttribute('data-mod');
+        renderVisits(containerId);
+      });
+    });
+
+    // Abrir Modal para Nueva Visita
+    const addBtn = document.getElementById('btn-add-visit');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => openVisitModal(null, containerId));
+    }
+
+    // Editar Visita
+    document.querySelectorAll('.btn-edit-vis').forEach(b => {
+      b.addEventListener('click', () => openVisitModal(b.getAttribute('data-vis-id'), containerId));
+    });
+
+    // Marcar como Realizada rápidamente
+    document.querySelectorAll('.btn-mark-done').forEach(b => {
+      b.addEventListener('click', () => {
+        const vId = b.getAttribute('data-vis-id');
+        const v = store.getVisit(vId);
+        if (!v) return;
+        const feedback = prompt('¿Qué impresiones dejó la visita con el cliente? (Bitácora):', v.feedback || 'Visita realizada satisfactoriamente con el cliente.');
+        if (feedback !== null) {
+          v.status = 'Realizada';
+          v.feedback = feedback;
+          store.saveVisit(v);
+          renderVisits(containerId);
+        }
+      });
+    });
+  }
+
+  // ==================================================================
+  // MODAL COMPLETO DE AGENDAR / EDITAR VISITA (PRESENCIAL / VIRTUAL)
+  // ==================================================================
+  function openVisitModal(visitId = null, containerId = 'content-area') {
+    const modalContainer = document.getElementById('modal-vis-container');
+    if (!modalContainer) return;
+
+    const vis = visitId ? store.getVisit(visitId) : null;
+    const properties = store.getProperties();
+    const contacts = store.getContacts();
+    const agents = store.getAgents();
+
+    if (!properties.length || !contacts.length) {
+      alert('Debes tener registrado al menos un inmueble y un cliente para agendar una visita.');
+      return;
+    }
+
+    const defaultProp = properties[0];
+    const currentModality = vis ? (vModality(vis)) : 'Presencial';
+
+    function vModality(v) {
+      return v && v.modality ? v.modality : 'Presencial';
+    }
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 modal-backdrop overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 relative my-8">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i data-lucide="calendar-plus" class="w-5 h-5 text-blue-600"></i>
+              ${vis ? 'Editar / Gestionar Cita de Visita' : 'Agendar Nueva Visita Inmobiliaria'}
+            </h3>
+            <button onclick="document.getElementById('modal-vis-container').innerHTML=''" class="text-slate-400 hover:text-slate-600 p-1">✕</button>
+          </div>
+
+          <form id="form-visit-edit" class="space-y-3.5 text-xs">
+            <!-- 1. MODALIDAD: VIRTUAL O PRESENCIAL (DESTACADA) -->
+            <div>
+              <label class="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                Modalidad de la Cita *
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <label id="opt-presencial-label" class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                  currentModality === 'Presencial' 
+                    ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold' 
+                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400'
+                }">
+                  <input type="radio" name="modality" value="Presencial" ${currentModality === 'Presencial' ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500">
+                  <div>
+                    <div class="flex items-center gap-1 font-bold">🏢 Presencial</div>
+                    <div class="text-[10px] text-slate-400 font-normal">En el inmueble físico</div>
+                  </div>
+                </label>
+
+                <label id="opt-virtual-label" class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                  currentModality === 'Virtual' 
+                    ? 'border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold' 
+                    : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400'
+                }">
+                  <input type="radio" name="modality" value="Virtual" ${currentModality === 'Virtual' ? 'checked' : ''} class="text-purple-600 focus:ring-purple-500">
+                  <div>
+                    <div class="flex items-center gap-1 font-bold text-purple-600 dark:text-purple-400">💻 Virtual (Online)</div>
+                    <div class="text-[10px] text-slate-400 font-normal">Videollamada / Tour 360°</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 2. INMUEBLE A VISITAR -->
+            <div>
+              <label class="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                Inmueble a Visitar *
+              </label>
+              <select name="propertyId" id="vis-form-prop" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-medium">
+                ${properties.map(p => `
+                  <option value="${p.id}" ${vis && vis.propertyId === p.id ? 'selected' : ''} data-addr="${Formatters.escapeHTML(p.address || '')}">
+                    [${p.code}] ${Formatters.escapeHTML(p.title)} - ${Formatters.formatCurrency(p.price, 'COP')}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- 3. CLIENTE Y ASESOR -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Cliente / Prospecto *</label>
+                <select name="contactId" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-medium">
+                  ${contacts.map(c => `
+                    <option value="${c.id}" ${vis && vis.contactId === c.id ? 'selected' : ''}>
+                      ${Formatters.escapeHTML(c.name)} (${c.phone || 'Sin tel.'})
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Asesor Responsable *</label>
+                <select name="agentId" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-medium">
+                  ${agents.map(a => `
+                    <option value="${a.id}" ${vis && vis.agentId === a.id ? 'selected' : ''}>
+                      ${Formatters.escapeHTML(a.name)} (${a.role})
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- 4. FECHA, HORA Y DURACIÓN -->
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-semibold mb-1">Fecha *</label>
+                <input type="date" name="date" required value="${vis ? vis.date : new Date().toISOString().split('T')[0]}" class="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+              </div>
+              <div>
+                <label class="block font-semibold mb-1">Hora *</label>
+                <input type="time" name="time" required value="${vis ? vis.time : '10:30'}" class="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+              </div>
+              <div>
+                <label class="block font-semibold mb-1">Duración</label>
+                <select name="duration" class="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                  <option value="30 min" ${vis && vis.duration === '30 min' ? 'selected' : ''}>30 min</option>
+                  <option value="45 min" ${!vis || vis.duration === '45 min' ? 'selected' : ''}>45 min</option>
+                  <option value="1 hora" ${vis && vis.duration === '1 hora' ? 'selected' : ''}>1 hora</option>
+                  <option value="1.5 horas" ${vis && vis.duration === '1.5 horas' ? 'selected' : ''}>1.5 horas</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 5. UBICACIÓN / LINK REUNIÓN -->
+            <div>
+              <label id="lbl-location-text" class="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                ${currentModality === 'Virtual' ? 'Enlace de Videollamada (Meet / Zoom / WhatsApp Video) *' : 'Punto de Encuentro / Dirección Física *'}
+              </label>
+              <input type="text" id="inp-location" name="location" value="${vis ? Formatters.escapeHTML(vis.location || '') : (defaultProp.address || '')}" placeholder="${currentModality === 'Virtual' ? 'https://meet.google.com/...' : 'Ej. Carrera 32 # 2 Sur - 45, Portería Principal'}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+            </div>
+
+            <!-- 6. ESTADO Y REQUERIMIENTOS -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold mb-1">Estado de la Cita</label>
+                <select name="status" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                  <option value="Programada" ${!vis || vis.status === 'Programada' ? 'selected' : ''}>Programada</option>
+                  <option value="Confirmada" ${vis && vis.status === 'Confirmada' ? 'selected' : ''}>Confirmada</option>
+                  <option value="Realizada" ${vis && vis.status === 'Realizada' ? 'selected' : ''}>Realizada</option>
+                  <option value="Cancelada" ${vis && vis.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold mb-1">Requerimientos / Instrucciones</label>
+                <input type="text" name="notes" value="${vis ? Formatters.escapeHTML(vis.notes || '') : ''}" placeholder="Ej. Llevar llaves, parqueadero..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+              </div>
+            </div>
+
+            <!-- 7. FEEDBACK / RESULTADO DE LA VISITA -->
+            <div>
+              <label class="block font-semibold mb-1">Feedback / Impresiones del Cliente (Bitácora)</label>
+              <textarea name="feedback" rows="2" placeholder="¿Qué le pareció la propiedad? ¿Hará oferta? Objeciones observadas..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">${vis ? Formatters.escapeHTML(vis.feedback || '') : ''}</textarea>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+              ${vis ? `
+                <button type="button" id="btn-delete-this-vis" class="text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer">
+                  Eliminar Cita
+                </button>
+              ` : '<span></span>'}
+
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="document.getElementById('modal-vis-container').innerHTML=''" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold cursor-pointer">
+                  Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer shadow-xs">
+                  ${vis ? 'Actualizar Cita' : 'Agendar Visita'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+
+    // Toggle Modalidad (Presencial vs Virtual)
+    const radioPresencial = document.querySelector('input[name="modality"][value="Presencial"]');
+    const radioVirtual = document.querySelector('input[name="modality"][value="Virtual"]');
+    const labelPresencial = document.getElementById('opt-presencial-label');
+    const labelVirtual = document.getElementById('opt-virtual-label');
+    const lblLocation = document.getElementById('lbl-location-text');
+    const inpLocation = document.getElementById('inp-location');
+    const selProp = document.getElementById('vis-form-prop');
+
+    function syncModalityUI(isVirt) {
+      if (isVirt) {
+        labelVirtual.className = 'flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold';
+        labelPresencial.className = 'flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400';
+        lblLocation.innerText = 'Enlace de Videollamada (Meet / Zoom / WhatsApp Video) *';
+        inpLocation.placeholder = 'https://meet.google.com/...';
+        if (!inpLocation.value || !inpLocation.value.startsWith('http')) {
+          inpLocation.value = 'https://meet.google.com/erk-vis-' + Math.floor(100 + Math.random() * 900);
+        }
+      } else {
+        labelPresencial.className = 'flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold';
+        labelVirtual.className = 'flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400';
+        lblLocation.innerText = 'Punto de Encuentro / Dirección Física *';
+        inpLocation.placeholder = 'Ej. Carrera 32 # 2 Sur - 45, Portería Principal';
+        const opt = selProp.options[selProp.selectedIndex];
+        if (opt && opt.getAttribute('data-addr')) {
+          inpLocation.value = opt.getAttribute('data-addr');
+        }
+      }
+    }
+
+    if (radioPresencial) radioPresencial.addEventListener('change', () => syncModalityUI(false));
+    if (radioVirtual) radioVirtual.addEventListener('change', () => syncModalityUI(true));
+
+    if (selProp) {
+      selProp.addEventListener('change', () => {
+        if (radioPresencial && radioPresencial.checked) {
+          const opt = selProp.options[selProp.selectedIndex];
+          if (opt && opt.getAttribute('data-addr')) {
+            inpLocation.value = opt.getAttribute('data-addr');
+          }
+        }
+      });
+    }
+
+    // Eliminar Cita
+    const btnDel = document.getElementById('btn-delete-this-vis');
+    if (btnDel) {
+      btnDel.addEventListener('click', () => {
+        if (confirm('¿Estás seguro de eliminar esta cita de la agenda?')) {
+          store.deleteVisit(vis.id);
+          modalContainer.innerHTML = '';
+          renderVisits(containerId);
+        }
+      });
+    }
+
+    // Submit Guardar / Actualizar
+    document.getElementById('form-visit-edit').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+
+      const visitData = {
+        id: vis ? vis.id : Formatters.generateId('vis'),
+        propertyId: fd.get('propertyId'),
+        contactId: fd.get('contactId'),
+        agentId: fd.get('agentId'),
+        modality: fd.get('modality') || 'Presencial',
+        date: fd.get('date'),
+        time: fd.get('time') || '10:30',
+        duration: fd.get('duration') || '45 min',
+        location: fd.get('location') || '',
+        status: fd.get('status') || 'Programada',
+        notes: fd.get('notes') || '',
+        feedback: fd.get('feedback') || ''
+      };
+
+      store.saveVisit(visitData);
+      modalContainer.innerHTML = '';
+      renderVisits(containerId);
+    });
   }
 
   // ==================================================================
